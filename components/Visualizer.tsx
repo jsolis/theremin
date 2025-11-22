@@ -3,7 +3,7 @@ import { audioEngine } from '../services/audioEngine';
 
 const Visualizer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { SoundPreset, WaveformType } from '../types';
 import { generatePreset } from '../services/geminiService';
 import { DEFAULT_PRESET } from '../constants';
-import { Loader2, Wand2, Music2, RefreshCcw } from 'lucide-react';
+import { Loader2, Wand2, RefreshCcw, Share2, Check } from 'lucide-react';
 import { audioEngine } from '../services/audioEngine';
 
 interface ControlsProps {
   preset: SoundPreset;
   onPresetChange: (preset: SoundPreset) => void;
+  showKeySeparators: boolean;
+  onToggleKeySeparators: (show: boolean) => void;
 }
 
-const Controls: React.FC<ControlsProps> = ({ preset, onPresetChange }) => {
+const Controls: React.FC<ControlsProps> = ({ preset, onPresetChange, showKeySeparators, onToggleKeySeparators }) => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleAiGenerate = async () => {
     if (!prompt.trim()) return;
@@ -36,6 +39,18 @@ const Controls: React.FC<ControlsProps> = ({ preset, onPresetChange }) => {
     const newPreset = { ...preset, [field]: value };
     onPresetChange(newPreset);
     audioEngine.setPreset(newPreset);
+  };
+
+  const handleShare = () => {
+      try {
+          const code = btoa(encodeURIComponent(JSON.stringify(preset)));
+          const url = `${window.location.origin}${window.location.pathname}?preset=${code}`;
+          navigator.clipboard.writeText(url);
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+      } catch (e) {
+          console.error("Failed to share", e);
+      }
   };
 
   return (
@@ -143,13 +158,38 @@ const Controls: React.FC<ControlsProps> = ({ preset, onPresetChange }) => {
                 min={0} max={100} 
                 onChange={(v) => handleChange('distortion', v)} 
             />
-            <div className="flex items-end justify-end mt-2">
-                 <button 
-                    onClick={() => { onPresetChange(DEFAULT_PRESET); audioEngine.setPreset(DEFAULT_PRESET); setPrompt('') }}
-                    className="text-xs text-gray-500 hover:text-white flex items-center gap-1"
-                 >
-                     <RefreshCcw size={12} /> Reset to Default
-                 </button>
+            
+            {/* Visual Settings & Share & Reset */}
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                 <label className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-2 cursor-pointer hover:text-gray-200">
+                    <input 
+                        type="checkbox" 
+                        checked={showKeySeparators}
+                        onChange={(e) => onToggleKeySeparators(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-gray-600 bg-black text-neon-blue focus:ring-1 focus:ring-neon-blue focus:ring-offset-0"
+                    />
+                    Key Lines
+                 </label>
+
+                 <div className="flex items-center gap-4">
+                    <button 
+                        onClick={handleShare}
+                        className={`text-xs flex items-center gap-1 transition-colors ${isCopied ? 'text-green-400' : 'text-neon-blue hover:text-white'}`}
+                        title="Copy preset link to clipboard"
+                    >
+                        {isCopied ? <Check size={12} /> : <Share2 size={12} />}
+                        {isCopied ? 'Copied!' : 'Share'}
+                    </button>
+                    
+                    <div className="w-px h-3 bg-gray-700"></div>
+
+                    <button 
+                        onClick={() => { onPresetChange(DEFAULT_PRESET); audioEngine.setPreset(DEFAULT_PRESET); setPrompt('') }}
+                        className="text-xs text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+                    >
+                        <RefreshCcw size={12} /> Reset
+                    </button>
+                 </div>
             </div>
         </div>
 

@@ -22,6 +22,19 @@ class AudioEngine {
 
   private currentPreset: SoundPreset;
 
+  // Metronome State
+  private metronomeIsPlaying: boolean = false;
+  private metronomeBpm: number = 120;
+  private metronomeSignature: number = 4;
+  private metronomeNextNoteTime: number = 0;
+  private metronomeBeatNumber: number = 0;
+  private metronomeTimerID: number | null = null;
+  private scheduleAheadTime: number = 0.1;
+  private lookahead: number = 25.0;
+
+  // UI Callback
+  public onMetronomeBeat: ((beat: number) => void) | null = null;
+
   constructor() {
     this.currentPreset = {
         name: 'Default',
@@ -236,6 +249,83 @@ class AudioEngine {
   public getByteTimeDomainData(dataArray: Uint8Array) {
     if (this.analyser) {
       this.analyser.getByteTimeDomainData(dataArray);
+    }
+  }
+
+  // --- Metronome Implementation ---
+
+  public startMetronome(bpm: number, signature: '4/4' | '3/4') {
+    if (this.metronomeIsPlaying) return;
+    if (!this.ctx) this.initialize();
+    if (this.ctx?.state === 'suspended') this.ctx.resume();
+
+    this.metronomeIsPlaying = true;
+    this.metronomeBpm = bpm;
+    this.metronomeSignature = signature === '3/4' ? 3 : 4;
+    this.metronomeBeatNumber = 0;
+    this.metronomeNextNoteTime = this.ctx!.currentTime + 0.1;
+    this.metronomeScheduler();
+  }
+
+  public stopMetronome() {
+    this.metronomeIsPlaying = false;
+    if (this.metronomeTimerID !== null) {
+        window.clearTimeout(this.metronomeTimerID);
+        this.metronomeTimerID = null;
+    }
+  }
+
+  public setMetronome(bpm: number, signature: '4/4' | '3/4') {
+    this.metronomeBpm = bpm;
+    this.metronomeSignature = signature === '3/4' ? 3 : 4;
+  }
+
+  private metronomeScheduler() {
+    if (!this.metronomeIsPlaying || !this.ctx) return;
+    
+    // While there are notes that will need to play before the next interval, schedule them
+    while (this.metronomeNextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+        this.scheduleMetronomeNote(this.metronomeBeatNumber, this.metronomeNextNoteTime);
+        this.nextMetronomeNote();
+    }
+    
+    this.metronomeTimerID = window.setTimeout(() => this.metronomeScheduler(), this.lookahead);
+  }
+
+  private nextMetronomeNote() {
+    const secondsPerBeat = 60.0 / this.metronomeBpm;
+    this.metronomeNextNoteTime += secondsPerBeat;
+    this.metronomeBeatNumber++;
+    if (this.metronomeBeatNumber >= this.metronomeSignature) {
+        this.metronomeBeatNumber = 0;
+    }
+  }
+
+  private scheduleMetronomeNote(beatNumber: number, time: number) {
+    const osc = this.ctx!.createOscillator();
+    const gain = this.ctx!.createGain();
+
+    osc.frequency.value = (beatNumber === 0) ? 1200 : 800;
+    osc.type = 'square'; // Clickier sound for metronome
+
+    // Short envelope
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+    osc.connect(gain);
+    gain.connect(this.ctx!.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.05);
+
+    // Schedule UI Update to match audio time
+    if (this.ctx) {
+        const delay = Math.max(0, (time - this.ctx.currentTime) * 1000);
+        window.setTimeout(() => {
+            if (this.metronomeIsPlaying && this.onMetronomeBeat) {
+                this.onMetronomeBeat(beatNumber);
+            }
+        }, delay);
     }
   }
 

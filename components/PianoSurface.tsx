@@ -4,9 +4,10 @@ import { MIN_FREQ, NOTES } from '../constants';
 
 interface PianoSurfaceProps {
   onActiveNoteChange: (note: string | null, freq: number) => void;
+  showKeySeparators: boolean;
 }
 
-const PianoSurface: React.FC<PianoSurfaceProps> = ({ onActiveNoteChange }) => {
+const PianoSurface: React.FC<PianoSurfaceProps> = ({ onActiveNoteChange, showKeySeparators }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPressed, setIsPressed] = useState(false);
   const [cursorX, setCursorX] = useState<number>(0); // percentage 0-100
@@ -155,7 +156,7 @@ const PianoSurface: React.FC<PianoSurfaceProps> = ({ onActiveNoteChange }) => {
             key={i}
             className={`absolute top-0 border-b-4 rounded-b-sm pointer-events-none transition-colors duration-100
                 ${key.type === 'white' 
-                    ? 'h-full bg-gray-200 border-gray-300 z-0 text-gray-400 flex items-end justify-center pb-2 text-xs font-mono' 
+                    ? `h-full bg-gray-200 border-gray-300 z-0 text-gray-400 flex items-end justify-center pb-2 text-xs font-mono ${showKeySeparators ? 'border-r border-r-gray-400' : ''}`
                     : 'h-[60%] bg-black border-gray-800 z-10 shadow-lg'
                 }
             `}
@@ -180,13 +181,6 @@ const PianoSurface: React.FC<PianoSurfaceProps> = ({ onActiveNoteChange }) => {
             className="absolute top-0 bottom-0 w-1 bg-neon-blue shadow-[0_0_15px_#00f3ff] z-30 pointer-events-none"
             style={{ left: `${cursorX}%` }}
           />
-      )}
-      
-      {/* Instruction Overlay (Only when not pressed) */}
-      {!isPressed && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40 opacity-50">
-              <p className="text-neon-blue font-light tracking-widest animate-pulse">TOUCH & SLIDE TO PLAY</p>
-          </div>
       )}
     </div>
   );

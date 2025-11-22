@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PianoSurface from './components/PianoSurface';
 import Visualizer from './components/Visualizer';
 import Controls from './components/Controls';
+import Metronome from './components/Metronome';
 import { audioEngine } from './services/audioEngine';
 import { DEFAULT_PRESET } from './constants';
 import { SoundPreset } from './types';
@@ -12,6 +13,7 @@ const App: React.FC = () => {
   const [frequency, setFrequency] = useState<number>(0);
   const [preset, setPreset] = useState<SoundPreset>(DEFAULT_PRESET);
   const [audioStarted, setAudioStarted] = useState(false);
+  const [showKeySeparators, setShowKeySeparators] = useState(true);
 
   const handleNoteChange = (note: string | null, freq: number) => {
     setActiveNote(note);
@@ -21,9 +23,25 @@ const App: React.FC = () => {
     }
   };
 
-  // Initialize audio engine with default preset once
+  // Initialize audio engine with default preset or shared preset from URL
   useEffect(() => {
-    audioEngine.setPreset(preset);
+    const params = new URLSearchParams(window.location.search);
+    const sharedCode = params.get('preset');
+
+    if (sharedCode) {
+      try {
+        // Decode base64 and URI encoding to handle special characters
+        const decoded = JSON.parse(decodeURIComponent(atob(sharedCode)));
+        const newPreset = { ...DEFAULT_PRESET, ...decoded };
+        setPreset(newPreset);
+        audioEngine.setPreset(newPreset);
+      } catch (e) {
+        console.error("Failed to load shared preset:", e);
+        audioEngine.setPreset(DEFAULT_PRESET);
+      }
+    } else {
+      audioEngine.setPreset(DEFAULT_PRESET);
+    }
   }, []);
 
   return (
@@ -66,11 +84,20 @@ const App: React.FC = () => {
             <div className="absolute -top-3 left-0 right-0 flex justify-between px-2 z-50 pointer-events-none">
                 {/* Markers for octaves could go here */}
             </div>
-            <PianoSurface onActiveNoteChange={handleNoteChange} />
+            <PianoSurface 
+                onActiveNoteChange={handleNoteChange} 
+                showKeySeparators={showKeySeparators}
+            />
         </div>
 
-        {/* Controls Panel */}
-        <Controls preset={preset} onPresetChange={setPreset} />
+        {/* Metronome & Controls */}
+        <Metronome />
+        <Controls 
+            preset={preset} 
+            onPresetChange={setPreset} 
+            showKeySeparators={showKeySeparators}
+            onToggleKeySeparators={setShowKeySeparators}
+        />
         
         {/* Footer Info */}
          <footer className="text-center text-gray-600 text-xs mt-12">
