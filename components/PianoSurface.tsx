@@ -146,7 +146,7 @@ const PianoSurface: React.FC<PianoSurfaceProps> = ({ onActiveNoteChange }) => {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-64 select-none cursor-crosshair overflow-hidden rounded-b-xl bg-gray-900 shadow-2xl touch-none"
+      className="relative w-full h-48 md:h-64 select-none cursor-crosshair overflow-hidden rounded-b-xl bg-gray-900 shadow-2xl touch-none"
       onPointerDown={onPointerDown}
     >
       {/* Render Keys */}

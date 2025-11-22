@@ -27,12 +27,12 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white p-4 md:p-8 flex flex-col items-center justify-center font-sans">
+    <div className="min-h-screen bg-dark-bg text-white p-4 md:p-8 flex flex-col items-center justify-start md:justify-center font-sans">
       
-      <div className="max-w-5xl w-full space-y-6 relative">
+      <div className="max-w-5xl w-full space-y-6 relative pb-10">
         
         {/* Header */}
-        <header className="flex items-center justify-between mb-4">
+        <header className="flex items-center justify-between mb-4 pt-2 md:pt-0">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-neon-blue to-neon-purple rounded-full flex items-center justify-center shadow-neon">
                     <Mic className="text-black" size={20} />
