@@ -15,9 +15,10 @@ const presetSchema = {
     vibratoSpeed: { type: Type.NUMBER, description: "Speed of pitch modulation in Hz (0-20)" },
     delayTime: { type: Type.NUMBER, description: "Delay time in seconds (0-1.0)" },
     feedback: { type: Type.NUMBER, description: "Delay feedback amount (0-0.9)" },
-    distortion: { type: Type.NUMBER, description: "Distortion amount (0-50)" }
+    distortion: { type: Type.NUMBER, description: "Distortion amount (0-50)" },
+    reverbMix: { type: Type.NUMBER, description: "Reverb/Ambience amount (0-1.0)" }
   },
-  required: ["name", "waveform", "vibratoDepth", "vibratoSpeed", "delayTime", "feedback", "distortion"]
+  required: ["name", "waveform", "vibratoDepth", "vibratoSpeed", "delayTime", "feedback", "distortion", "reverbMix"]
 };
 
 export const generatePreset = async (description: string): Promise<SoundPreset | null> => {
@@ -32,7 +33,7 @@ export const generatePreset = async (description: string): Promise<SoundPreset |
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: `Create a synthesizer sound preset that matches this description: "${description}". 
-      It should be suitable for a theremin-like instrument.`,
+      It should be suitable for a theremin-like instrument. Use Reverb to add atmosphere.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: presetSchema

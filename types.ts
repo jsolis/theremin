@@ -13,6 +13,7 @@ export interface SoundPreset {
   delayTime: number; // 0 to 1 sec
   feedback: number; // 0 to 0.9
   distortion: number; // 0 to 50
+  reverbMix: number; // 0 to 1
 }
 
 export interface AudioState {

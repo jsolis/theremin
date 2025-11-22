@@ -6,8 +6,9 @@ export const DEFAULT_PRESET: SoundPreset = {
   vibratoDepth: 10,
   vibratoSpeed: 6,
   delayTime: 0.25,
-  feedback: 0.4,
-  distortion: 0
+  feedback: 0.3,
+  distortion: 0,
+  reverbMix: 0.35
 };
 
 export const MIN_FREQ = 130.81; // C3

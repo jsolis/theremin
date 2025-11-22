@@ -132,12 +132,18 @@ const Controls: React.FC<ControlsProps> = ({ preset, onPresetChange }) => {
          {/* Sliders Group 3 */}
         <div className="space-y-4">
              <ControlSlider 
+                label="Reverb Mix" 
+                value={preset.reverbMix} 
+                min={0} max={1} step={0.05}
+                onChange={(v) => handleChange('reverbMix', v)} 
+            />
+             <ControlSlider 
                 label="Distortion" 
                 value={preset.distortion} 
                 min={0} max={100} 
                 onChange={(v) => handleChange('distortion', v)} 
             />
-            <div className="flex items-end justify-end">
+            <div className="flex items-end justify-end mt-2">
                  <button 
                     onClick={() => { onPresetChange(DEFAULT_PRESET); audioEngine.setPreset(DEFAULT_PRESET); setPrompt('') }}
                     className="text-xs text-gray-500 hover:text-white flex items-center gap-1"
