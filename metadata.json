@@ -1,0 +1,5 @@
+{
+  "name": "Lumina Theremin",
+  "description": "A responsive, gesture-controlled web theremin with a piano interface. Features continuous pitch sliding, visual feedback, and AI-generated sound presets.",
+  "requestFramePermissions": []
+}
