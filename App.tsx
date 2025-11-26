@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import PianoSurface from './components/PianoSurface';
 import Visualizer from './components/Visualizer';
 import Controls from './components/Controls';
 import Metronome from './components/Metronome';
+import AuthModal from './components/AuthModal';
 import { audioEngine } from './services/audioEngine';
+import { authService } from './services/authService';
 import { DEFAULT_PRESET } from './constants';
-import { SoundPreset } from './types';
-import { Mic } from 'lucide-react';
+import { SoundPreset, UserProfile } from './types';
+import { Mic, User, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
   const [activeNote, setActiveNote] = useState<string | null>(null);
@@ -14,6 +17,18 @@ const App: React.FC = () => {
   const [preset, setPreset] = useState<SoundPreset>(DEFAULT_PRESET);
   const [audioStarted, setAudioStarted] = useState(false);
   const [showKeySeparators, setShowKeySeparators] = useState(true);
+  
+  // Auth State
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Initialize Auth
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+        setUser(currentUser);
+    }
+  }, []);
 
   const handleNoteChange = (note: string | null, freq: number) => {
     setActiveNote(note);
@@ -21,6 +36,11 @@ const App: React.FC = () => {
     if (!audioStarted && note) {
         setAudioStarted(true);
     }
+  };
+
+  const handleLogout = async () => {
+      await authService.logout();
+      setUser(null);
   };
 
   // Initialize audio engine with default preset or shared preset from URL
@@ -47,6 +67,12 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-bg text-white p-4 md:p-8 flex flex-col items-center justify-start md:justify-center font-sans">
       
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onLoginSuccess={(u) => setUser(u)}
+      />
+
       <div className="max-w-5xl w-full space-y-6 relative pb-10">
         
         {/* Header */}
@@ -61,12 +87,45 @@ const App: React.FC = () => {
                 </div>
             </div>
             
-            <div className="text-right">
-                <div className="text-3xl font-mono font-bold text-neon-blue h-8">
-                    {activeNote || <span className="opacity-20">--</span>}
+            <div className="flex items-center gap-6">
+                <div className="text-right hidden sm:block">
+                    <div className="text-3xl font-mono font-bold text-neon-blue h-8">
+                        {activeNote || <span className="opacity-20">--</span>}
+                    </div>
+                    <div className="text-xs font-mono text-gray-400 h-4">
+                        {frequency > 0 ? `${frequency.toFixed(1)} Hz` : ''}
+                    </div>
                 </div>
-                <div className="text-xs font-mono text-gray-400 h-4">
-                    {frequency > 0 ? `${frequency.toFixed(1)} Hz` : ''}
+
+                {/* User Profile Button */}
+                <div className="relative group">
+                    <button 
+                        onClick={() => !user && setIsAuthModalOpen(true)}
+                        className={`w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center transition-all ${
+                            user 
+                            ? 'bg-neon-blue/10 text-neon-blue border-neon-blue/50' 
+                            : 'bg-gray-900 text-gray-400 hover:bg-gray-800'
+                        }`}
+                        title={user ? user.email : "Login"}
+                    >
+                        <User size={20} />
+                    </button>
+                    
+                    {/* Hover Menu for Logout */}
+                    {user && (
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-800">
+                                <p className="text-xs text-gray-500">Signed in as</p>
+                                <p className="text-sm font-bold text-white truncate">{user.name}</p>
+                            </div>
+                            <button 
+                                onClick={handleLogout}
+                                className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 flex items-center gap-2"
+                            >
+                                <LogOut size={14} /> Sign Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>
@@ -97,6 +156,8 @@ const App: React.FC = () => {
             onPresetChange={setPreset} 
             showKeySeparators={showKeySeparators}
             onToggleKeySeparators={setShowKeySeparators}
+            user={user}
+            onLoginRequest={() => setIsAuthModalOpen(true)}
         />
         
         {/* Footer Info */}

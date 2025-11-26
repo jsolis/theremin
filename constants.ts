@@ -5,8 +5,8 @@ export const DEFAULT_PRESET: SoundPreset = {
   waveform: WaveformType.SINE,
   vibratoDepth: 10,
   vibratoSpeed: 6,
-  delayTime: 0.25,
-  feedback: 0.3,
+  delayTime: 0,
+  feedback: 0,
   distortion: 0,
   reverbMix: 0.35
 };

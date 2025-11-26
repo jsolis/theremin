@@ -1,3 +1,4 @@
+
 export enum WaveformType {
   SINE = 'sine',
   SQUARE = 'square',
@@ -6,6 +7,7 @@ export enum WaveformType {
 }
 
 export interface SoundPreset {
+  id?: string; // Optional ID for cloud presets
   name: string;
   waveform: WaveformType;
   vibratoDepth: number; // 0 to 50
@@ -28,4 +30,10 @@ export interface PianoKeyData {
   type: 'white' | 'black';
   frequency: number;
   leftOffset: number; // Percentage for positioning
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
 }

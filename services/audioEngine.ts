@@ -14,6 +14,7 @@ class AudioEngine {
   // Effects
   private delayNode: DelayNode | null = null;
   private feedbackGain: GainNode | null = null;
+  private delayOutputGain: GainNode | null = null; // New gain to control delay wet mix
   private reverbNode: ConvolverNode | null = null;
   private reverbGain: GainNode | null = null;
   
@@ -80,24 +81,26 @@ class AudioEngine {
 
     // --- Effects Routing ---
     // MasterGain splits to:
-    // 1. Analyser (Dry+Wet mix) via effects
-    // To simplify, we sum everything into the analyser, then analyser to destination.
-    
-    // However, to control Dry/Wet levels properly:
-    // MasterGain -> Dry (Direct to Analyser)
-    // MasterGain -> Delay -> Analyser
-    // MasterGain -> Reverb -> Analyser
+    // 1. Analyser (Dry Signal)
+    // 2. Delay -> DelayOutput -> Analyser (Wet Signal)
+    // 3. Reverb -> Analyser (Wet Signal)
     
     this.masterGain.connect(this.analyser);
 
     // --- Delay Setup ---
     this.delayNode = this.ctx.createDelay();
     this.feedbackGain = this.ctx.createGain();
+    this.delayOutputGain = this.ctx.createGain();
     
     this.masterGain.connect(this.delayNode);
+    
+    // Feedback Loop
     this.delayNode.connect(this.feedbackGain);
     this.feedbackGain.connect(this.delayNode);
-    this.delayNode.connect(this.analyser); 
+    
+    // Output to main mix
+    this.delayNode.connect(this.delayOutputGain);
+    this.delayOutputGain.connect(this.analyser); 
 
     // --- Reverb Setup ---
     this.reverbNode = this.ctx.createConvolver();
@@ -113,6 +116,9 @@ class AudioEngine {
 
     // Final Output
     this.analyser.connect(this.ctx.destination);
+
+    // CRITICAL: Apply the current preset values to the newly created nodes
+    this.setPreset(this.currentPreset);
   }
 
   public setPreset(preset: SoundPreset) {
@@ -133,9 +139,15 @@ class AudioEngine {
     }
 
     // Update Delay
-    if (this.delayNode && this.feedbackGain) {
+    if (this.delayNode && this.feedbackGain && this.delayOutputGain) {
       this.delayNode.delayTime.setTargetAtTime(preset.delayTime, t, 0.1);
       this.feedbackGain.gain.setTargetAtTime(preset.feedback, t, 0.1);
+      
+      // Fix for "double note" / phasing when delay is 0
+      // If delay time is near zero, mute the delay output so we don't just double the dry signal
+      // We use 0.8 as a standard "Wet" level when delay is active
+      const delayOutLevel = preset.delayTime < 0.01 ? 0.0 : 0.8; 
+      this.delayOutputGain.gain.setTargetAtTime(delayOutLevel, t, 0.1);
     }
 
     // Update Reverb
@@ -168,6 +180,13 @@ class AudioEngine {
     if (this.reverbGain) {
         this.reverbGain.gain.cancelScheduledValues(t);
         this.reverbGain.gain.value = this.currentPreset.reverbMix;
+    }
+    
+    // Ensure delay output gain is correct on start
+    if (this.delayOutputGain) {
+         const delayOutLevel = this.currentPreset.delayTime < 0.01 ? 0.0 : 0.8; 
+         this.delayOutputGain.gain.cancelScheduledValues(t);
+         this.delayOutputGain.gain.value = delayOutLevel;
     }
 
     // Create Oscillators
